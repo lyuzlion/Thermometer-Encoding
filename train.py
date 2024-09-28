@@ -112,7 +112,7 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        print('train Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx + 1), 100.*correct/total, correct, total))
+        print("batch id : ", batch_idx, 'train Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx + 1), 100.*correct/total, correct, total))
 
 def test(epoch):
     global best_acc
@@ -135,7 +135,7 @@ def test(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        print('test Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print("batch id : ", batch_idx, 'test Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -186,7 +186,7 @@ def advtrain(epoch):
             advimg = torchvision.utils.make_grid(advimg)
             writer.add_image('Image', advimg, epoch)
 
-        print('advtrain Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print("batch id : ", batch_idx, 'advtrain Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def advtest(epoch):
     global attacker
@@ -211,7 +211,7 @@ def advtest(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        print('advtest Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print("batch id : ", batch_idx, 'advtest Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     acc = 100. * correct / total
     state = {
