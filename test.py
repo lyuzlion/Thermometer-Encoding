@@ -19,7 +19,7 @@ from utils.encoder import encoder
 from LSPGA import LSPGA
 
 
-parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
+parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Testing')
 parser.add_argument('--level', default=15, type=int, help='image quantization level')
 parser.add_argument('--log',default='them/res50',type=str,help='path of log')
 args = parser.parse_args()
