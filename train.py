@@ -11,6 +11,8 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 import os
 import argparse
+import warnings
+warnings.filterwarnings("ignore")
 
 from models.wide_resnet import Wide_ResNet
 from utils import progress_bar
@@ -46,10 +48,10 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-trainset = torchvision.datasets.CIFAR10(root='E:\SDU\CV\data', train=True, download=True, transform=transform_train)
+trainset = torchvision.datasets.CIFAR10(root='../data/cifar10', train=True, download=True, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=256, shuffle=True, num_workers=0)
 
-testset = torchvision.datasets.CIFAR10(root='E:\SDU\CV\data', train=False, download=True, transform=transform_test)
+testset = torchvision.datasets.CIFAR10(root='../data/cifar10', train=False, download=True, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -93,13 +95,13 @@ def train(epoch):
     correct = 0
     total = 0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
-        channel0,channel1,channel2=inputs.numpy()[:,0,:,:],inputs.numpy()[:,1,:,:],inputs.numpy()[:,2,:,:]
-        channel0,channel1,channel2 = encoder.tempencoding(channel0),encoder.tempencoding(channel1),encoder.tempencoding(channel2)
-        channel0, channel1, channel2 = torch.Tensor(channel0),torch.Tensor(channel1),torch.Tensor(channel2)
+        channel0, channel1, channel2 = inputs.numpy()[:,0,:,:], inputs.numpy()[:,1,:,:], inputs.numpy()[:,2,:,:]
+        channel0, channel1, channel2 = encoder.tempencoding(channel0), encoder.tempencoding(channel1), encoder.tempencoding(channel2)
+        channel0, channel1, channel2 = torch.Tensor(channel0), torch.Tensor(channel1), torch.Tensor(channel2)
         if use_cuda:
-            channel0, channel1, channel2,targets = channel0.cuda(), channel1.cuda(), channel2.cuda(),targets.cuda()
+            channel0, channel1, channel2, targets = channel0.cuda(), channel1.cuda(), channel2.cuda(),targets.cuda()
         optimizer.zero_grad()
-        channel0, channel1, channel2, targets = Variable(channel0),Variable(channel1),Variable(channel2), Variable(targets)
+        channel0, channel1, channel2, targets = Variable(channel0), Variable(channel1), Variable(channel2), Variable(targets)
         outputs = net(channel0, channel1, channel2)
         loss = criterion(outputs, targets)
         loss.backward()
@@ -110,8 +112,7 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-            % (train_loss/(batch_idx + 1), 100.*correct/total, correct, total))
+        print('train Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx + 1), 100.*correct/total, correct, total))
 
 def test(epoch):
     global best_acc
@@ -120,9 +121,9 @@ def test(epoch):
     correct = 0
     total = 0
     for batch_idx, (inputs, targets) in enumerate(testloader):
-        channel0,channel1,channel2=inputs.numpy()[:,0,:,:],inputs.numpy()[:,1,:,:],inputs.numpy()[:,2,:,:]
-        channel0,channel1,channel2 = encoder.tempencoding(channel0),encoder.tempencoding(channel1),encoder.tempencoding(channel2)
-        channel0, channel1, channel2 = torch.Tensor(channel0),torch.Tensor(channel1),torch.Tensor(channel2)
+        channel0,channel1,channel2=inputs.numpy()[:,0,:,:], inputs.numpy()[:,1,:,:], inputs.numpy()[:,2,:,:]
+        channel0,channel1,channel2 = encoder.tempencoding(channel0), encoder.tempencoding(channel1), encoder.tempencoding(channel2)
+        channel0, channel1, channel2 = torch.Tensor(channel0), torch.Tensor(channel1), torch.Tensor(channel2)
         if use_cuda:
             channel0, channel1, channel2,targets = channel0.cuda(), channel1.cuda(), channel2.cuda(),targets.cuda()
         channel0, channel1, channel2, targets = Variable(channel0), Variable(channel1), Variable(channel2), Variable(targets)
@@ -134,8 +135,7 @@ def test(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-            % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print('test Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -175,6 +175,8 @@ def advtrain(epoch):
         train_loss += loss.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
+        # if total > 500:
+        #     break
         correct += predicted.eq(targets.data).cpu().sum()
         if batch_idx==0:
             advc0,advc1,advc2 = (channel[-3:].data.cpu().numpy() for channel in [channel0,channel1,channel2])
@@ -184,7 +186,7 @@ def advtrain(epoch):
             advimg = torchvision.utils.make_grid(advimg)
             writer.add_image('Image', advimg, epoch)
 
-        print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print('advtrain Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def advtest(epoch):
     global attacker
@@ -201,12 +203,15 @@ def advtest(epoch):
         outputs = net(channel0, channel1, channel2)
         loss = criterion(outputs, targets)
 
+        # if total > 500:
+        #     break
+
         test_loss += loss.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-        print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        print('advtest Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     acc = 100. * correct / total
     state = {
